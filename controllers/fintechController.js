@@ -1,41 +1,58 @@
+// controllers/fintechController.js
 const axios = require("axios");
 const Fintech = require("../models/fintechModel");
-const { loginToNibss } = require("../services/nibssServices");
-const { BASE_URL } = require("../config/nibssConfig");
+const { BASE_URL, loginToNibss } = require("../services/nibssServices");
 
 exports.onboardFintech = async (req, res) => {
   try {
     const { name, email } = req.body;
 
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and email required" });
+    }
+
+    // ✅ CALL NIBSS API
     const response = await axios.post(
       `${BASE_URL}/fintech/onboard`,
-      { name, email }
+      {
+        name,
+        email
+        // 👉 Add this if required by API
+        // callbackUrl: "https://yourapp.com/webhook"
+      }
     );
 
-    const { apiKey, apiSecret, bankCode, bankName } = response.data;
+    const data = response.data;
 
-    // ✅ Get token immediately
-    const token = await loginToNibss(apiKey, apiSecret);
+    console.log("NIBSS RESPONSE:", data);
 
-    // ✅ Save ONLY ONCE
+    // ✅ GET TOKEN
+    const token = await loginToNibss(
+      data.apiKey,
+      data.apiSecret
+    );
+
+    // ✅ SAVE TO DB
     const fintech = await Fintech.create({
-      ...response.data,
-      token,
-      bankName: bankName || "Unknown Bank", // fallback if bankName is not provided
-      bankCode: bankCode || "Unknown Code"  // fallback if bankCode is not provided
+      name: data.name,
+      email: data.email,
+      apiKey: data.apiKey,
+      apiSecret: data.apiSecret,
+      bankCode: data.bankCode,
+      bankName: data.bankName,
+      token
     });
 
     res.status(201).json({
-      fintech: {
-        name: fintech.name,
-        email: fintech.email,
-        bankCode: fintech.bankCode,
-        bankName: fintech.bankName
-      },
-      token: fintech.token
-  });
+      message: "Fintech onboarded successfully",
+      fintech
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("FULL ERROR:", error.response?.data || error.message);
+
+    res.status(400).json({
+      error: error.response?.data || error.message
+    });
   }
 };

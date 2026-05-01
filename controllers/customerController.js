@@ -1,8 +1,9 @@
+// controllers/customerController.js
 const axios = require("axios");
 const Customer = require("../models/customerModel");
 const Account = require("../models/accountModel");
 const Fintech = require("../models/fintechModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const { BASE_URL } = require("../services/nibssServices");
 
 exports.createCustomer = async (req, res) => {
   try {

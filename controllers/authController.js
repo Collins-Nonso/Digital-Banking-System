@@ -1,3 +1,4 @@
+// controllers/authController.js
 const Fintech = require("../models/fintechModel");
 const { loginToNibss } = require("../services/nibssServices");
 

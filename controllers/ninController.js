@@ -1,49 +1,42 @@
-const axios = require("axios");
-const Fintech = require("../models/fintechModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const NIN = require("../models/ninModel");
 
-// Insert NIN
 exports.insertNin = async (req, res) => {
   try {
     const { nin, firstName, lastName, dob } = req.body;
 
-    const fintech = await Fintech.findOne();
+    const exists = await NIN.findOne({ nin });
 
-    const response = await axios.post(
-      `${BASE_URL}/insertNin`,
-      {
-        nin,
-        firstName,
-        lastName,
-        dob
-      },
-      {
-        headers: { Authorization: `Bearer ${fintech.token}` }
-      }
-    );
+    if (exists) {
+      return res.status(400).json({ message: "NIN already exists" });
+    }
 
-    res.json(response.data);
+    const record = await NIN.create({
+      user: req.user._id,
+      nin,
+      firstName,
+      lastName,
+      dob
+    });
+
+    res.status(201).json(record);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Validate NIN
 exports.validateNin = async (req, res) => {
   try {
     const { nin } = req.body;
 
-    const fintech = await Fintech.findOne();
+    const record = await NIN.findOne({ nin });
 
-    const response = await axios.post(
-      `${BASE_URL}/validateNin`,
-      { nin },
-      {
-        headers: { Authorization: `Bearer ${fintech.token}` }
-      }
-    );
+    if (!record) {
+      return res.json({ valid: false });
+    }
 
-    res.json(response.data);
+    res.json({ valid: true, data: record });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -2,7 +2,7 @@ const axios = require("axios");
 const Account = require("../models/accountModel");
 const Customer = require("../models/customerModel");
 const Fintech = require("../models/fintechModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const { BASE_URL } = require("../services/nibssServices");
 
 exports.createAccount = async (req, res) => {
   try {
@@ -12,18 +12,23 @@ exports.createAccount = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // ✅ Create or fetch customer
     let customer = await Customer.findOne({ kycID });
 
     if (!customer) {
-      customer = await Customer.create({ kycType, kycID, dob, firstName, lastName });
+      customer = await Customer.create({
+        kycType,
+        kycID,
+        dob
+      });
     }
 
-    // ✅ Prevent duplicate account
     const existing = await Account.findOne({ customerId: customer._id });
 
     if (existing) {
-      return res.status(409).json(existing);
+      return res.status(409).json({
+        message: "Account already exists",
+        account: existing
+      });
     }
 
     const fintech = await Fintech.findOne();
@@ -33,7 +38,7 @@ exports.createAccount = async (req, res) => {
     }
 
     const response = await axios.post(
-      `${BASE_URL}/api/account/create`,
+      `${BASE_URL}/account/create`,
       { kycType, kycID, dob },
       {
         headers: { Authorization: `Bearer ${fintech.token}` }
@@ -42,26 +47,17 @@ exports.createAccount = async (req, res) => {
 
     const data = response.data.data || response.data;
 
-    const accountNumber = data.accountNumber || data.account_number;
-    const bankCode = data.bankCode || data.bank_code;
-    const bankName = data.bankName || data.bank_name;
-
-    if (!accountNumber) {
-      return res.status(500).json({ error: "Invalid NIBSS response" });
-    }
-
-    // ✅ SAVE TO DB
     const account = await Account.create({
       customerId: customer._id,
-      accountNumber,
-      bankCode,
-      bankName,
+      accountNumber: data.accountNumber,
+      bankCode: data.bankCode,
+      bankName: data.bankName,
       balance: 15000
     });
 
     res.status(201).json({
       message: "Account created successfully",
-      ...account._doc
+      account
     });
 
   } catch (error) {
@@ -69,19 +65,19 @@ exports.createAccount = async (req, res) => {
   }
 };
 
-exports.getAccounts = async (req, res) => {
-  const data = await Account.find().populate("customerId", "kycID");
-  res.json(data);
-};
-
 exports.getBalance = async (req, res) => {
-  const account = await Account.findOne({
-    accountNumber: req.params.no
-  });
+  try {
+    const account = await Account.findOne({
+      accountNumber: req.params.accountNumber
+    });
 
-  if (!account) {
-    return res.status(404).json({ message: "Account not found" });
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.json({ balance: account.balance });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-  res.json({ balance: account.balance });
 };

@@ -1,3 +1,4 @@
+// models/fintechModel.js
 const mongoose = require("mongoose");
 
 const fintechSchema = new mongoose.Schema({

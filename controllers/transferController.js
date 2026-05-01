@@ -1,7 +1,8 @@
+// controllers/transferController.js
 const axios = require("axios");
 const Fintech = require("../models/fintechModel");
 const Transaction = require("../models/transactionModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const { BASE_URL } = require("../services/nibssServices");
 
 exports.transfer = async (req, res) => {
   try {

@@ -1,3 +1,4 @@
+// controllers/balanceController.js
 const axios = require("axios");
 const Fintech = require("../models/fintechModel");
 const { BASE_URL } = require("../config/nibssConfig");

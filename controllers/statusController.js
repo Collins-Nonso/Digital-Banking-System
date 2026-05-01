@@ -1,6 +1,7 @@
+// controllers/statusController.js
 const axios = require("axios");
 const Fintech = require("../models/fintechModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const { BASE_URL } = require("../services/nibssServices");
 
 exports.getTransactionStatus = async (req, res) => {
     

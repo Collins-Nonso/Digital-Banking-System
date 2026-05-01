@@ -1,3 +1,4 @@
+// routes/customerRoute.js
 const express = require("express");
 const router = express.Router();
 const { verifyCustomer } = require("../controllers/customerController");

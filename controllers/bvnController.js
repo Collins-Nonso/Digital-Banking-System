@@ -1,50 +1,44 @@
-const axios = require("axios");
-const Fintech = require("../models/fintechModel");
-const { BASE_URL } = require("../config/nibssConfig");
+const BVN = require("../models/bvnModel");
 
-// Insert BVN
 exports.insertBvn = async (req, res) => {
   try {
     const { bvn, firstName, lastName, dob, phone } = req.body;
 
-    const fintech = await Fintech.findOne();
+    const exists = await BVN.findOne({ bvn });
 
-    const response = await axios.post(
-      `${BASE_URL}/insertBvn`,
-      {
-        bvn,
-        firstName,
-        lastName,
-        dob,
-        phone
-      },
-      {
-        headers: { Authorization: `Bearer ${fintech.token}` }
-      }
-    );
+    if (exists) {
+      return res.status(400).json({ message: "BVN already exists" });
+    }
 
-    res.json(response.data);
+    const record = await BVN.create({
+      user: req.user._id,
+      bvn,
+      firstName,
+      lastName,
+      dob,
+      phone,
+      status: "verified"
+    });
+
+    res.status(201).json(record);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Validate BVN
 exports.validateBvn = async (req, res) => {
   try {
     const { bvn } = req.body;
 
-    const fintech = await Fintech.findOne();
+    const record = await BVN.findOne({ bvn });
 
-    const response = await axios.post(
-      `${BASE_URL}/validateBvn`,
-      { bvn },
-      {
-        headers: { Authorization: `Bearer ${fintech.token}` }
-      }
-    );
+    if (!record) {
+      return res.json({ valid: false });
+    }
 
-    res.json(response.data);
+    res.json({ valid: true, data: record });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

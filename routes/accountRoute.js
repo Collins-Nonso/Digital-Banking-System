@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { createAccount } = require("../controllers/accountController");
-const { getBalance } = require("../controllers/balanceController");
+const { createAccount, getBalance } = require("../controllers/accountController");
+const { protect } = require("../middleware/authMiddleware");
 
-router.post("/create", createAccount);
-router.get("/balance/:accountNumber", getBalance);
+router.post("/create", protect, createAccount);
+router.get("/balance/:accountNumber", protect, getBalance);
 
 module.exports = router;
